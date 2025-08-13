@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        
+        
+        
+        <link rel="shortcut icon" href="../../img/favicon.ico">
+        <title>Pyright Type Narrowing: An End-to-End Deep Dive - My Docs</title>
+        <link href="../../css/bootstrap.min.css" rel="stylesheet">
+        <link href="../../css/fontawesome.min.css" rel="stylesheet">
+        <link href="../../css/brands.min.css" rel="stylesheet">
+        <link href="../../css/solid.min.css" rel="stylesheet">
+        <link href="../../css/v4-font-face.min.css" rel="stylesheet">
+        <link href="../../css/base.css" rel="stylesheet">
+        <link id="hljs-light" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" >
+        <link id="hljs-dark" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github-dark.min.css" disabled>
+        <link href="../../extra.css" rel="stylesheet">
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+        <script>hljs.highlightAll();</script> 
+    </head>
+
+    <body>
+        <div class="navbar fixed-top navbar-expand-lg navbar-dark bg-primary">
+            <div class="container">
+                <a class="navbar-brand" href="../..">My Docs</a>
+                <!-- Expander button -->
+                <button type="button" class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#navbar-collapse" aria-controls="navbar-collapse" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <!-- Expanded navigation -->
+                <div id="navbar-collapse" class="navbar-collapse collapse">
+                        <!-- Main navigation -->
+                        <ul class="nav navbar-nav">
+                            <li class="nav-item">
+                                <a href="../.." class="nav-link">Home</a>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle active" aria-current="page" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Architecture Reference</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../../archit_ref/" class="dropdown-item">Architecture References</a>
+</li>
+                                    
+<li>
+    <a href="../control-flow-graph-and-type-checking/" class="dropdown-item">Pyright control-flow graph (CFG) and type checking integration</a>
+</li>
+                                    
+<li>
+    <a href="./" class="dropdown-item active" aria-current="page">Pyright Type Narrowing: An End-to-End Deep Dive</a>
+</li>
+                                </ul>
+                            </li>
+                        </ul>
+
+                    <ul class="nav navbar-nav ms-md-auto">
+                        <li class="nav-item">
+                            <a href="#" class="nav-link" data-bs-toggle="modal" data-bs-target="#mkdocs_search_modal">
+                                <i class="fa fa-search"></i> Search
+                            </a>
+                        </li>
+                            <li class="nav-item">
+                                <a rel="prev" href="../control-flow-graph-and-type-checking/" class="nav-link">
+                                    <i class="fa fa-arrow-left"></i> Previous
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a rel="next" class="nav-link disabled">
+                                    Next <i class="fa fa-arrow-right"></i>
+                                </a>
+                            </li>
+                            <li class="nav-item dropdown">
+                              <button id="theme-menu" aria-expanded="false" data-bs-toggle="dropdown" data-bs-display="static" aria-label="Toggle theme" class="nav-link dropdown-toggle">
+                                <i class="fa-solid fa-circle-half-stroke fa-fw"></i>
+                                <span class="d-lg-none ms-2">Toggle theme</span>
+                              </button>
+                              <ul class="dropdown-menu dropdown-menu-end">
+                                <li>
+                                  <button class="dropdown-item d-flex align-items-center" data-bs-theme-value="light" aria-pressed="true">
+                                    <i class="fa-solid fa-sun fa-fw"></i>
+                                    <span class="ms-2">Light</span>
+                                    <i class="fa-solid fa-check ms-auto"></i>
+                                  </button>
+                                </li>
+                                <li>
+                                  <button class="dropdown-item d-flex align-items-center" data-bs-theme-value="dark" aria-pressed="false">
+                                    <i class="fa-solid fa-moon fa-fw"></i>
+                                    <span class="ms-2">Dark</span>
+                                    <i class="fa-solid fa-check ms-auto d-none"></i>
+                                  </button>
+                                </li>
+                                <li>
+                                  <button class="dropdown-item d-flex align-items-center" data-bs-theme-value="auto" aria-pressed="false">
+                                    <i class="fa-solid fa-circle-half-stroke fa-fw"></i>
+                                    <span class="ms-2">Auto</span>
+                                    <i class="fa-solid fa-check ms-auto d-none"></i>
+                                  </button>
+                                </li>
+                              </ul>
+                            </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <script src="../../js/darkmode.js"></script>
+
+        <div class="container">
+            <div class="row">
+                    <div class="col-md-3"><div class="navbar-expand-md bs-sidebar hidden-print affix" role="complementary">
+    <div class="navbar-header">
+        <button type="button" class="navbar-toggler collapsed" data-bs-toggle="collapse" data-bs-target="#toc-collapse" title="Table of Contents">
+            <span class="fa fa-angle-down"></span>
+        </button>
+    </div>
+
+    
+    <div id="toc-collapse" class="navbar-collapse collapse card bg-body-tertiary">
+        <ul class="nav flex-column">
+            
+            <li class="nav-item" data-bs-level="1"><a href="#pyright-type-narrowing-an-end-to-end-deep-dive" class="nav-link">Pyright Type Narrowing: An End-to-End Deep Dive</a>
+              <ul class="nav flex-column">
+            <li class="nav-item" data-bs-level="2"><a href="#where-narrowing-comes-from-in-the-code" class="nav-link">Where narrowing comes from in the code</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#narrowing-pipeline-at-a-glance" class="nav-link">Narrowing pipeline at a glance</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#key-apis-and-where-they-live" class="nav-link">Key APIs and where they live</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#pseudocode-gettypenarrowingcallback-usage-in-the-engine" class="nav-link">Pseudocode: getTypeNarrowingCallback usage in the engine</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#truthiness-narrowing" class="nav-link">Truthiness narrowing</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#equalityidentity-narrowing-none-literals-discriminated-unions" class="nav-link">Equality/identity narrowing (None, literals, discriminated unions)</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#isinstance-issubclass-typeis" class="nav-link">isinstance / issubclass / TypeIs</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#user-defined-typeguard-typeis" class="nav-link">User-defined TypeGuard / TypeIs</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#container-membership-and-element-projection" class="nav-link">Container membership and element projection</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#typeddict-specific-narrowing" class="nav-link">TypedDict-specific narrowing</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#pattern-matching-pep-634" class="nav-link">Pattern matching (PEP 634)</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#aliased-conditions-and-assignment-expression-tests" class="nav-link">Aliased conditions and assignment expression tests</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#integration-with-cfg-and-evaluator" class="nav-link">Integration with CFG and evaluator</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#tests-to-consult" class="nav-link">Tests to consult</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#quick-references-files-and-symbols" class="nav-link">Quick references (files and symbols)</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+              </ul>
+            </li>
+        </ul>
+    </div>
+</div></div>
+                    <div class="col-md-9" role="main">
+
+<h1 id="pyright-type-narrowing-an-end-to-end-deep-dive">Pyright Type Narrowing: An End-to-End Deep Dive</h1>
+<p>This document explains how type narrowing works in Pyright: where it’s triggered, how the binder wires narrowing-capable expressions into the control-flow graph (CFG), how the code flow engine applies narrowing, and the algorithms behind common narrowing forms (truthiness, equality/identity, isinstance/issubclass, user TypeGuard/TypeIs, container membership, discriminated unions, typing.TypedDict, and pattern matching). Citations include file paths and primary function names.</p>
+<ul>
+<li>Core sources</li>
+<li>CFG engine: <code>packages/pyright-internal/src/analyzer/codeFlowEngine.ts</code></li>
+<li>Narrowing rules: <code>packages/pyright-internal/src/analyzer/typeGuards.ts</code></li>
+<li>Pattern matching narrowing: <code>packages/pyright-internal/src/analyzer/patternMatching.ts</code></li>
+<li>Binder wiring (collects narrowing expressions for code flow): <code>packages/pyright-internal/src/analyzer/binder.ts</code></li>
+<li>Evaluator integration: <code>packages/pyright-internal/src/analyzer/typeEvaluator.ts</code></li>
+<li>Concepts: <code>docs/type-concepts-advanced.md</code> (Type Narrowing; Implied Else; Reachability)</li>
+</ul>
+<h2 id="where-narrowing-comes-from-in-the-code">Where narrowing comes from in the code</h2>
+<ul>
+<li>binder.ts</li>
+<li><code>_isNarrowingExpression(...)</code> identifies expressions that can narrow (names, member access, index, and negations, with pragmatic filters for Never-narrowing performance) and records them as code-flow-tracked “reference expressions”.</li>
+<li>
+<p>Conditional and pattern constructs (visitIf/While/Binary/Unary/Match/With/etc.) generate <code>FlowCondition</code>, <code>FlowNarrowForPattern</code>, <code>FlowExhaustedMatch</code>, and other nodes used later by the engine for narrowing.</p>
+</li>
+<li>
+<p>codeFlowEngine.ts</p>
+</li>
+<li><code>getCodeFlowEngine(...).createCodeFlowAnalyzer().getTypeFromCodeFlow(flowNode, reference, options)</code> traverses backward and calls into narrowing callbacks:<ul>
+<li><code>getTypeNarrowingCallback(...)</code> for boolean/equality/identity/isinstance/TypeGuard/etc.</li>
+<li><code>getPatternSubtypeNarrowingCallback(...)</code> from patternMatching.ts to project narrowing to subject subexpressions.</li>
+</ul>
+</li>
+<li>
+<p>Handles implied-else (<code>TrueNeverCondition</code>/<code>FalseNeverCondition</code>) and gates (finally/context managers) that affect whether a path continues.</p>
+</li>
+<li>
+<p>typeGuards.ts</p>
+</li>
+<li><code>getTypeNarrowingCallback(...)</code> returns a function that, given the current type of the reference, returns a narrowed type for positive or negative tests.</li>
+<li>
+<p>Implements specific narrowing helpers like <code>narrowTypeForTruthiness</code>, <code>narrowTypeForInstanceOrSubclass</code> (isinstance/issubclass/TypeIs), discriminated-literal/None field comparisons, container membership, typed-dict key/value tests, tuple None-index tests, and aliasing of conditions.</p>
+</li>
+<li>
+<p>patternMatching.ts</p>
+</li>
+<li><code>narrowTypeBasedOnPattern(...)</code> and helpers implement narrowing for PEP 634 match/case patterns (sequence, literal, class, mapping, value), with safeguards against combinatorial blow-up.</li>
+</ul>
+<h2 id="narrowing-pipeline-at-a-glance">Narrowing pipeline at a glance</h2>
+<p>1) Binder detects a narrowing-capable test and records reference expressions on the current flow label. Key function: <code>Binder._isNarrowingExpression</code>.
+2) The binder emits a control-flow node for the test (e.g., <code>FlowCondition</code> or <code>FlowNarrowForPattern</code>).
+3) The evaluator requests <code>getTypeFromCodeFlow</code> for a reference at a program point; the engine walks backward through flow nodes.
+4) When it encounters a test that affects the reference, the engine computes a narrowing callback from <code>typeGuards.getTypeNarrowingCallback</code> (or pattern callbacks) and applies it to the current/reference type, producing a narrowed type.
+5) Narrowed types from different branches are unioned; loops use fixed-point iteration; special gates may stop or alter traversal.</p>
+<h2 id="key-apis-and-where-they-live">Key APIs and where they live</h2>
+<ul>
+<li>Engine application sites (codeFlowEngine.ts)</li>
+<li>Truthy/falsey conditions: <code>getTypeFromCodeFlow</code> checks <code>FlowCondition</code> and calls <code>getTypeNarrowingCallback(...)</code>.</li>
+<li>Pattern narrowing: <code>getTypeFromCodeFlow</code> handles <code>FlowNarrowForPattern</code> and <code>FlowExhaustedMatch</code>, calling <code>getPatternSubtypeNarrowingCallback</code> to project narrowing to subexpressions.</li>
+<li>
+<p>TypedDict key assignment: special handling when the reference is an index with a literal key.</p>
+</li>
+<li>
+<p>Narrowing callbacks (typeGuards.ts)</p>
+</li>
+<li>
+<p><code>getTypeNarrowingCallback(evaluator, reference, testExpression, isPositiveTest, recursionCount?)</code></p>
+<ul>
+<li>Truthiness: <code>narrowTypeForTruthiness</code>.</li>
+<li>Equality/identity with None, literals, discriminated fields: <code>narrowTypeForIsNone</code>, <code>narrowTypeForDiscriminatedLiteralFieldComparison</code>, <code>narrowTypeForDiscriminatedFieldNoneComparison</code>.</li>
+<li>isinstance/issubclass/TypeIs: <code>getIsInstanceClassTypes</code>, <code>narrowTypeForInstanceOrSubclass</code> (internal: <code>narrowTypeForInstance</code>, <code>narrowTypeForInstanceOrSubclassInternal</code>, plus Callable/protocol special cases).</li>
+<li>User-defined TypeGuard/TypeIs: <code>narrowTypeForUserDefinedTypeGuard</code>.</li>
+<li>Container membership and element projection: <code>getElementTypeForContainerNarrowing</code>, <code>narrowTypeForContainerElementType</code>.</li>
+<li>Aliased conditions and assignment expressions: <code>getTypeNarrowingCallbackForAliasedCondition</code>, <code>getTypeNarrowingCallbackForAssignmentExpression</code>.</li>
+</ul>
+</li>
+<li>
+<p>Pattern narrowing (patternMatching.ts)</p>
+</li>
+<li><code>narrowTypeBasedOnPattern</code> orchestrates narrowing for match/case patterns. The engine uses companion callbacks for subexpression projection.</li>
+</ul>
+<h2 id="pseudocode-gettypenarrowingcallback-usage-in-the-engine">Pseudocode: getTypeNarrowingCallback usage in the engine</h2>
+<pre><code class="language-python"># Inside codeFlowEngine.getTypeFromCodeFlow when hitting a FlowCondition
+if not options.skipConditionalNarrowing and reference is not None:
+    callback = getTypeNarrowingCallback(evaluator, reference, condition.expression, is_positive(condition))
+    if callback:
+        # Two forms: either narrow the flow-in type (if ref is implicit) or
+        # narrow the ref’s current type when we have a direct reference
+        if condition.reference is None:
+            flow_in = getTypeFromFlowNode(condition.antecedent)
+            narrowed = callback(flow_in.type)
+            if narrowed:
+                return store(narrowed.type, incomplete=flow_in.isIncomplete or narrowed.isIncomplete)
+        else:
+            ref_info = evaluator.getTypeOfExpression(condition.reference)
+            narrowed = callback(ref_info.type)
+            if narrowed:
+                return store(narrowed.type, incomplete=ref_info.isIncomplete or narrowed.isIncomplete)
+</code></pre>
+<h2 id="truthiness-narrowing">Truthiness narrowing</h2>
+<ul>
+<li>Where: <code>typeGuards.ts</code> → <code>narrowTypeForTruthiness</code></li>
+<li>Trigger: <code>if x:</code>, <code>if not x:</code></li>
+<li>Behavior: Removes falsy or truthy components per branch using evaluator’s truthiness rules.</li>
+</ul>
+<p>Pseudocode:</p>
+<pre><code class="language-python">def narrow_type_for_truthiness(type, is_positive):
+    result = []
+    for t in subtypes(type):
+        if is_positive and can_be_truthy(t):
+            result.append(remove_falsiness(t))
+        elif not is_positive and can_be_falsy(t):
+            result.append(remove_truthiness(t))
+    return union(result)
+</code></pre>
+<h2 id="equalityidentity-narrowing-none-literals-discriminated-unions">Equality/identity narrowing (None, literals, discriminated unions)</h2>
+<ul>
+<li>Where: <code>typeGuards.ts</code> → helpers like <code>narrowTypeForIsNone</code>, <code>narrowTypeForDiscriminatedLiteralFieldComparison</code>, <code>narrowTypeForDiscriminatedFieldNoneComparison</code>, TypedDict/Tuple discriminated comparisons.</li>
+<li>Trigger: <code>x is None</code>, <code>x == Literal[...]</code>, <code>obj.tag == 'A'</code>, <code>d['k'] == 'v'</code>.</li>
+<li>Behavior: Filters union members by compatibility with the discriminant and refines the member types accordingly.</li>
+</ul>
+<h2 id="isinstance-issubclass-typeis">isinstance / issubclass / TypeIs</h2>
+<ul>
+<li>Where: <code>typeGuards.ts</code> → <code>getIsInstanceClassTypes</code>, <code>narrowTypeForInstanceOrSubclass</code>, internals <code>narrowTypeForInstance</code>, <code>narrowTypeForInstanceOrSubclassInternal</code>.</li>
+<li>Trigger: <code>isinstance(x, C)</code>, <code>issubclass(T, C)</code>, <code>typeguard(x) -&gt; TypeIs[...]</code>.</li>
+<li>Behavior: Filters the reference type by the class filters, honoring subclass/instance semantics, protocols, Callable, and special forms. TypeIs keeps type variables “bound” differently than isinstance.</li>
+</ul>
+<p>Pseudocode (simplified):</p>
+<pre><code class="language-python">def narrow_instance_or_subclass(var_type, class_filters, is_positive, is_instance_check, is_type_is):
+    if not is_positive:
+        return remove_assignable(var_type, class_filters)
+    kept = []
+    for vt in subtypes(var_type):
+        if assignable(vt, class_filters, allow_subclasses=is_instance_check):
+            kept.append(bind_typevars(vt) if not is_type_is else vt)
+    return union(kept)
+</code></pre>
+<h2 id="user-defined-typeguard-typeis">User-defined TypeGuard / TypeIs</h2>
+<ul>
+<li>Where: <code>typeGuards.ts</code> → recognition in <code>getTypeNarrowingCallback</code>, narrowing in <code>narrowTypeForUserDefinedTypeGuard</code>.</li>
+<li>Behavior: For TypeGuard[T], positive path narrows to T; negative path keeps original (non-strict). For TypeIs[T], applies “strict” behavior and preserves bindings as required.</li>
+</ul>
+<h2 id="container-membership-and-element-projection">Container membership and element projection</h2>
+<ul>
+<li>Where: <code>typeGuards.ts</code> → <code>getElementTypeForContainerNarrowing</code>, <code>narrowTypeForContainerElementType</code>.</li>
+<li>Trigger: <code>if elem in container:</code> or derived element-type checks.</li>
+<li>Behavior: Infers element types from specialized containers and narrows reference types accordingly, with safety checks for disjointness and literals.</li>
+</ul>
+<h2 id="typeddict-specific-narrowing">TypedDict-specific narrowing</h2>
+<ul>
+<li>Where: <code>typeGuards.ts</code> → <code>narrowTypeForTypedDictKey</code>, <code>narrowTypeForDiscriminatedDictEntryComparison</code>; engine also narrows on literal-key assignments and comparisons.</li>
+<li>Behavior: Narrows a TypedDict to retain/adjust entry types when keys are tested or assigned literal values; respects extra/required entries and discriminated unions over keys.</li>
+</ul>
+<h2 id="pattern-matching-pep-634">Pattern matching (PEP 634)</h2>
+<ul>
+<li>Where: <code>patternMatching.ts</code> → <code>narrowTypeBasedOnPattern</code> and helpers; engine integration via <code>FlowNarrowForPattern</code> and <code>FlowExhaustedMatch</code> with <code>getPatternSubtypeNarrowingCallback</code>.</li>
+<li>Behavior: Narrows the subject type (and can project to subexpressions) based on the matched pattern: sequences, classes, literals, mappings, as-patterns, value patterns. Includes performance caps like <code>maxSequencePatternTupleExpansionSubtypes</code>.</li>
+</ul>
+<h2 id="aliased-conditions-and-assignment-expression-tests">Aliased conditions and assignment expression tests</h2>
+<ul>
+<li>Where: <code>typeGuards.ts</code> → <code>getTypeNarrowingCallbackForAliasedCondition</code>, <code>getTypeNarrowingCallbackForAssignmentExpression</code>.</li>
+<li>Trigger: <code>if (n := expr): ...</code>, or if/while condition bound to a local that is then tested elsewhere.</li>
+<li>Behavior: Traces through aliasing to reuse the same narrowing effect.</li>
+</ul>
+<h2 id="integration-with-cfg-and-evaluator">Integration with CFG and evaluator</h2>
+<ul>
+<li>Engine entry: <code>codeFlowEngine.getCodeFlowEngine(...).createCodeFlowAnalyzer().getTypeFromCodeFlow(...)</code>.</li>
+<li>Evaluator call sites: <code>typeEvaluator.ts</code> → <code>getFlowTypeOfReference</code> uses flow only if the binder recorded the expression and complexity thresholds allow.</li>
+<li>Performance controls: complexity limits in evaluator, recursion prevention and fixed-point convergence in engine, and empirical caps in patternMatching.</li>
+</ul>
+<h2 id="tests-to-consult">Tests to consult</h2>
+<ul>
+<li><code>packages/pyright-internal/src/tests/samples/</code> contains many sample files: <code>typeGuard*.py</code>, <code>typeNarrowing*.py</code>, <code>TypeNarrowingFalsy*</code>, <code>typeNarrowingCallable*</code>, TypedDict-related samples.</li>
+<li><code>packages/pyright-internal/src/tests/typeEvaluator1.test.ts</code> references these samples; use them as ground truth for narrowing behaviors.</li>
+</ul>
+<h2 id="quick-references-files-and-symbols">Quick references (files and symbols)</h2>
+<ul>
+<li>Binder: <code>_isNarrowingExpression</code>, <code>visitIf</code>, <code>visitWhile</code>, <code>visitBinaryOperation</code>, <code>visitUnaryOperation</code>, <code>visitMatch</code>, <code>_createFlowConditional</code>, <code>_createFlowNarrowForPattern</code>, <code>_createFlowExhaustedMatch</code>.</li>
+<li>Engine: <code>getTypeFromCodeFlow</code>, <code>getPatternSubtypeNarrowingCallback</code>, TypedDict assignment handling.</li>
+<li>Type guards: <code>getTypeNarrowingCallback</code>, <code>narrowTypeForTruthiness</code>, <code>narrowTypeForInstanceOrSubclass</code>, <code>narrowTypeForUserDefinedTypeGuard</code>, container/typed-dict/discriminant helpers.</li>
+<li>Pattern matching: <code>narrowTypeBasedOnPattern</code>, helpers for sequence/literal/class/mapping/value patterns.</li>
+<li>Evaluator integration: <code>getFlowTypeOfReference</code>, <code>checkCodeFlowTooComplex</code>.</li>
+</ul></div>
+            </div>
+        </div>
+
+        <footer class="col-md-12">
+            <hr>
+            <p>Documentation built with <a href="https://www.mkdocs.org/">MkDocs</a>.</p>
+        </footer>
+        <script src="../../js/bootstrap.bundle.min.js"></script>
+        <script>
+            var base_url = "../..",
+                shortcuts = {"help": 191, "next": 78, "previous": 80, "search": 83};
+        </script>
+        <script src="../../js/base.js"></script>
+        <script src="../../search/main.js"></script>
+
+        <div class="modal" id="mkdocs_search_modal" tabindex="-1" role="dialog" aria-labelledby="searchModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="searchModalLabel">Search</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>From here you can search these documents. Enter your search terms below.</p>
+                <form>
+                    <div class="form-group">
+                        <input type="search" class="form-control" placeholder="Search..." id="mkdocs-search-query" title="Type search term here">
+                    </div>
+                </form>
+                <div id="mkdocs-search-results" data-no-results-text="No results found"></div>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div><div class="modal" id="mkdocs_keyboard_modal" tabindex="-1" role="dialog" aria-labelledby="keyboardModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="keyboardModalLabel">Keyboard Shortcuts</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th style="width: 20%;">Keys</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="help shortcut"><kbd>?</kbd></td>
+                    <td>Open this help</td>
+                  </tr>
+                  <tr>
+                    <td class="next shortcut"><kbd>n</kbd></td>
+                    <td>Next page</td>
+                  </tr>
+                  <tr>
+                    <td class="prev shortcut"><kbd>p</kbd></td>
+                    <td>Previous page</td>
+                  </tr>
+                  <tr>
+                    <td class="search shortcut"><kbd>s</kbd></td>
+                    <td>Search</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div>
+
+    </body>
+</html>

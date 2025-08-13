@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        
+        
+        
+        <link rel="shortcut icon" href="../../img/favicon.ico">
+        <title>Pyright control-flow graph (CFG) and type checking integration - My Docs</title>
+        <link href="../../css/bootstrap.min.css" rel="stylesheet">
+        <link href="../../css/fontawesome.min.css" rel="stylesheet">
+        <link href="../../css/brands.min.css" rel="stylesheet">
+        <link href="../../css/solid.min.css" rel="stylesheet">
+        <link href="../../css/v4-font-face.min.css" rel="stylesheet">
+        <link href="../../css/base.css" rel="stylesheet">
+        <link id="hljs-light" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" >
+        <link id="hljs-dark" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github-dark.min.css" disabled>
+        <link href="../../extra.css" rel="stylesheet">
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+        <script>hljs.highlightAll();</script> 
+    </head>
+
+    <body>
+        <div class="navbar fixed-top navbar-expand-lg navbar-dark bg-primary">
+            <div class="container">
+                <a class="navbar-brand" href="../..">My Docs</a>
+                <!-- Expander button -->
+                <button type="button" class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#navbar-collapse" aria-controls="navbar-collapse" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <!-- Expanded navigation -->
+                <div id="navbar-collapse" class="navbar-collapse collapse">
+                        <!-- Main navigation -->
+                        <ul class="nav navbar-nav">
+                            <li class="nav-item">
+                                <a href="../.." class="nav-link">Home</a>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle active" aria-current="page" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Architecture Reference</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../../archit_ref/" class="dropdown-item">Architecture References</a>
+</li>
+                                    
+<li>
+    <a href="./" class="dropdown-item active" aria-current="page">Pyright control-flow graph (CFG) and type checking integration</a>
+</li>
+                                    
+<li>
+    <a href="../type-narrowing-deep-dive/" class="dropdown-item">Pyright Type Narrowing: An End-to-End Deep Dive</a>
+</li>
+                                </ul>
+                            </li>
+                        </ul>
+
+                    <ul class="nav navbar-nav ms-md-auto">
+                        <li class="nav-item">
+                            <a href="#" class="nav-link" data-bs-toggle="modal" data-bs-target="#mkdocs_search_modal">
+                                <i class="fa fa-search"></i> Search
+                            </a>
+                        </li>
+                            <li class="nav-item">
+                                <a rel="prev" href="../../archit_ref/" class="nav-link">
+                                    <i class="fa fa-arrow-left"></i> Previous
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a rel="next" href="../type-narrowing-deep-dive/" class="nav-link">
+                                    Next <i class="fa fa-arrow-right"></i>
+                                </a>
+                            </li>
+                            <li class="nav-item dropdown">
+                              <button id="theme-menu" aria-expanded="false" data-bs-toggle="dropdown" data-bs-display="static" aria-label="Toggle theme" class="nav-link dropdown-toggle">
+                                <i class="fa-solid fa-circle-half-stroke fa-fw"></i>
+                                <span class="d-lg-none ms-2">Toggle theme</span>
+                              </button>
+                              <ul class="dropdown-menu dropdown-menu-end">
+                                <li>
+                                  <button class="dropdown-item d-flex align-items-center" data-bs-theme-value="light" aria-pressed="true">
+                                    <i class="fa-solid fa-sun fa-fw"></i>
+                                    <span class="ms-2">Light</span>
+                                    <i class="fa-solid fa-check ms-auto"></i>
+                                  </button>
+                                </li>
+                                <li>
+                                  <button class="dropdown-item d-flex align-items-center" data-bs-theme-value="dark" aria-pressed="false">
+                                    <i class="fa-solid fa-moon fa-fw"></i>
+                                    <span class="ms-2">Dark</span>
+                                    <i class="fa-solid fa-check ms-auto d-none"></i>
+                                  </button>
+                                </li>
+                                <li>
+                                  <button class="dropdown-item d-flex align-items-center" data-bs-theme-value="auto" aria-pressed="false">
+                                    <i class="fa-solid fa-circle-half-stroke fa-fw"></i>
+                                    <span class="ms-2">Auto</span>
+                                    <i class="fa-solid fa-check ms-auto d-none"></i>
+                                  </button>
+                                </li>
+                              </ul>
+                            </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <script src="../../js/darkmode.js"></script>
+
+        <div class="container">
+            <div class="row">
+                    <div class="col-md-3"><div class="navbar-expand-md bs-sidebar hidden-print affix" role="complementary">
+    <div class="navbar-header">
+        <button type="button" class="navbar-toggler collapsed" data-bs-toggle="collapse" data-bs-target="#toc-collapse" title="Table of Contents">
+            <span class="fa fa-angle-down"></span>
+        </button>
+    </div>
+
+    
+    <div id="toc-collapse" class="navbar-collapse collapse card bg-body-tertiary">
+        <ul class="nav flex-column">
+            
+            <li class="nav-item" data-bs-level="1"><a href="#pyright-control-flow-graph-cfg-and-type-checking-integration" class="nav-link">Pyright control-flow graph (CFG) and type checking integration</a>
+              <ul class="nav flex-column">
+            <li class="nav-item" data-bs-level="2"><a href="#high-level-architecture" class="nav-link">High-level architecture</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#cfg-node-kinds-and-flags-where-defined" class="nav-link">CFG node kinds and flags (where defined)</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#cfg-construction-binder" class="nav-link">CFG construction (binder)</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#how-the-type-evaluator-uses-the-cfg" class="nav-link">How the type evaluator uses the CFG</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#the-code-flow-engine-core-algorithms" class="nav-link">The Code Flow Engine: core algorithms</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#keys-that-connect-binder-and-evaluator" class="nav-link">Keys that connect binder and evaluator</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#debugging-printing-the-cfg" class="nav-link">Debugging: printing the CFG</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#end-to-end-flow" class="nav-link">End-to-end flow</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#exact-references-file-and-symbol" class="nav-link">Exact references (file and symbol)</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#notes-on-performance-and-limits" class="nav-link">Notes on performance and limits</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#appendix-related-conceptual-docs" class="nav-link">Appendix: related conceptual docs</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+              </ul>
+            </li>
+        </ul>
+    </div>
+</div></div>
+                    <div class="col-md-9" role="main">
+
+<h1 id="pyright-control-flow-graph-cfg-and-type-checking-integration">Pyright control-flow graph (CFG) and type checking integration</h1>
+<p>This document explains how Pyright constructs, traverses, and uses its control-flow graph (CFG) for type narrowing and reachability. It includes exact references to files and functions in this codebase and Python-like pseudocode for the core algorithms.</p>
+<ul>
+<li>Primary sources in this repo</li>
+<li>CFG node types and flags: <code>packages/pyright-internal/src/analyzer/codeFlowTypes.ts</code></li>
+<li>CFG traversal and type narrowing engine: <code>packages/pyright-internal/src/analyzer/codeFlowEngine.ts</code></li>
+<li>CFG construction (binder/walker): <code>packages/pyright-internal/src/analyzer/binder.ts</code></li>
+<li>Type evaluator integration: <code>packages/pyright-internal/src/analyzer/typeEvaluator.ts</code></li>
+<li>CFG formatting (debug): <code>packages/pyright-internal/src/analyzer/codeFlowUtils.ts</code></li>
+<li>Node-attached analysis info: <code>packages/pyright-internal/src/analyzer/analyzerNodeInfo.ts</code></li>
+<li>Related helpers: <code>packages/pyright-internal/src/analyzer/typeGuards.ts</code>, <code>packages/pyright-internal/src/analyzer/patternMatching.ts</code> (used for narrowing callbacks)</li>
+</ul>
+<p>Related Pyright docs
+- Type narrowing and reachability concepts: <code>docs/type-concepts-advanced.md</code> (sections "Type Narrowing", "Reachability", "Narrowing for Implied Else").</p>
+<h2 id="high-level-architecture">High-level architecture</h2>
+<ul>
+<li>The binder (<code>binder.ts</code>) walks the parse tree and builds a flow graph of FlowNodes (edges are stored as "antecedents" pointing backward). It also attaches the current flow point to parse nodes via <code>AnalyzerNodeInfo.setFlowNode</code> and end-of-block nodes via <code>setAfterFlowNode</code>.</li>
+<li>The type evaluator (<code>typeEvaluator.ts</code>) asks a <code>CodeFlowEngine</code> (<code>codeFlowEngine.ts</code>) to compute:</li>
+<li>The narrowed type of an expression at a program point (using <code>CodeFlowAnalyzer.getTypeFromCodeFlow</code>).</li>
+<li>The reachability of a node (using <code>CodeFlowEngine.getFlowNodeReachability</code>).</li>
+<li>Narrowing walks backward through the CFG from the current node to its antecedents, applying assignment effects and conditional/pattern guards; branches are unioned; loops use a fixed-point iteration with convergence limits; try/finally and context managers add special gates.</li>
+</ul>
+<h2 id="cfg-node-kinds-and-flags-where-defined">CFG node kinds and flags (where defined)</h2>
+<ul>
+<li>File: <code>codeFlowTypes.ts</code></li>
+<li>Enum <code>FlowFlags</code> defines node kinds including Start, BranchLabel, LoopLabel, Assignment, Unbind, WildcardImport, TrueCondition, FalseCondition, Call, PreFinallyGate, PostFinally, VariableAnnotation, PostContextManager, TrueNeverCondition, FalseNeverCondition, NarrowForPattern, ExhaustedMatch.</li>
+<li>Node interfaces: <code>FlowNode</code>, <code>FlowLabel</code>/<code>FlowBranchLabel</code>, <code>FlowAssignment</code>, <code>FlowVariableAnnotation</code>, <code>FlowWildcardImport</code>, <code>FlowCondition</code>, <code>FlowNarrowForPattern</code>, <code>FlowExhaustedMatch</code>, <code>FlowCall</code>, <code>FlowPreFinallyGate</code>, <code>FlowPostFinally</code>, <code>FlowPostContextManagerLabel</code>.</li>
+<li>Reference-key helpers: <code>isCodeFlowSupportedForReference</code>, <code>createKeyForReference</code>, <code>createKeysForReferenceSubexpressions</code>.</li>
+</ul>
+<p>Key idea: nodes reference antecedents (previous flow points), enabling efficient backward traversal from a point-of-use.</p>
+<h2 id="cfg-construction-binder">CFG construction (binder)</h2>
+<ul>
+<li>File: <code>binder.ts</code></li>
+<li>Per execution scope (module/function/lambda), the binder maintains <code>_currentFlowNode</code> and attaches it to parse nodes: <code>AnalyzerNodeInfo.setFlowNode(node, this._currentFlowNode!)</code>.</li>
+<li>Entry/start nodes:<ul>
+<li><code>_createStartFlowNode()</code> sets <code>FlowFlags.Start</code> when entering a module or function. Example: module and function bind paths.</li>
+</ul>
+</li>
+<li>Branches and loops:<ul>
+<li><code>_createBranchLabel</code> (creates <code>FlowBranchLabel</code>), <code>_finishFlowLabel</code>, <code>_addAntecedent</code>, <code>_createLoopLabel</code> (for <code>while</code>, <code>for</code>, comprehensions), <code>_bindLoopStatement</code>.</li>
+<li><code>visitIf</code>, <code>visitWhile</code>, <code>visitTernary</code>, logical ops (<code>visitBinaryOperation</code>/<code>visitUnaryOperation</code>) wire true/false paths using <code>_bindConditional</code> and <code>_createFlowConditional</code> that produce <code>FlowCondition</code> nodes with <code>TrueCondition</code>/<code>FalseCondition</code>/<code>TrueNeverCondition</code>/<code>FalseNeverCondition</code> flags.</li>
+</ul>
+</li>
+<li>Assignments and variable annotations:<ul>
+<li><code>_createFlowAssignment</code> builds <code>FlowAssignment</code> nodes (with optional <code>Unbind</code> for deletions). <code>_createVariableAnnotationFlowNode</code> adds <code>FlowVariableAnnotation</code> to separate annotation and name binding.</li>
+</ul>
+</li>
+<li>Calls and exceptions:<ul>
+<li><code>_createCallFlowNode</code> emits <code>FlowCall</code> and marks that exceptions can route to except targets.</li>
+<li><code>visitRaise</code> and return paths connect to structural unreachable nodes and finally targets.</li>
+</ul>
+</li>
+<li>Try/except/finally:<ul>
+<li><code>visitTry</code> builds the special "finally gate": emits <code>FlowPreFinallyGate</code> and <code>FlowPostFinally</code> (see ASCII diagram comment in <code>visitTry</code>).</li>
+</ul>
+</li>
+<li>With/async with:<ul>
+<li><code>visitWith</code> builds <code>FlowPostContextManagerLabel</code> nodes that model context managers that may swallow exceptions, interpreted by the engine.</li>
+</ul>
+</li>
+<li>Match/case and pattern narrowing:<ul>
+<li><code>visitMatch</code> emits per-case narrowing nodes <code>FlowNarrowForPattern</code> and a closing <code>FlowExhaustedMatch</code> gate if the match can be proven exhaustive.</li>
+</ul>
+</li>
+<li>Misc:<ul>
+<li>Wildcard import: <code>_createFlowWildcardImport</code> builds <code>FlowWildcardImport</code> nodes.</li>
+</ul>
+</li>
+<li>Complexity tracking (to short-circuit huge graphs): <code>_codeFlowComplexity</code> updated in <code>_finishFlowLabel</code> and per-node; recorded via <code>AnalyzerNodeInfo.setCodeFlowComplexity</code>.</li>
+</ul>
+<p>References
+- Start node: <code>_createStartFlowNode</code> (binder.ts)
+- Conditional wiring: <code>_bindConditional</code>, <code>_createFlowConditional</code> (binder.ts)
+- If/While: <code>visitIf</code>, <code>visitWhile</code> (binder.ts)
+- For/Comprehensions: <code>visitFor</code>, <code>visitComprehension</code>, <code>_bindLoopStatement</code>, <code>_createLoopLabel</code> (binder.ts)
+- Try/finally: <code>visitTry</code> and nodes <code>FlowPreFinallyGate</code>, <code>FlowPostFinally</code> (binder.ts/codeFlowTypes.ts)
+- With: <code>visitWith</code>, context manager label creation (binder.ts)
+- Match/pattern: <code>visitMatch</code>, <code>_createFlowNarrowForPattern</code>, <code>_createFlowExhaustedMatch</code> (binder.ts)
+- Assignments: <code>_createFlowAssignment</code> (binder.ts)
+- Variable annotations: <code>_createVariableAnnotationFlowNode</code> (binder.ts)
+- Call nodes: <code>_createCallFlowNode</code> (binder.ts)
+- Wildcard imports: <code>_createFlowWildcardImport</code> (binder.ts)</p>
+<h2 id="how-the-type-evaluator-uses-the-cfg">How the type evaluator uses the CFG</h2>
+<ul>
+<li>File: <code>typeEvaluator.ts</code></li>
+<li>Creates a <code>CodeFlowEngine</code> via <code>getCodeFlowEngine(evaluator, speculativeTypeTracker)</code> and caches a <code>CodeFlowAnalyzer</code> per execution scope and starting type (<code>getCodeFlowAnalyzerForNode</code>).</li>
+<li>Entry points that call into the engine:<ul>
+<li>Narrowing for a reference: <code>getFlowTypeOfReference(reference, startNode?, options?)</code> → obtains <code>flowNode</code> via <code>AnalyzerNodeInfo.getFlowNode</code>, checks scope’s <code>codeFlowExpressions</code> set, then calls <code>CodeFlowAnalyzer.getTypeFromCodeFlow(flowNode, reference, options)</code>.</li>
+<li>Reachability queries: <code>getNodeReachability</code>, <code>getAfterNodeReachability</code> use <code>codeFlowEngine.getFlowNodeReachability</code>.</li>
+</ul>
+</li>
+<li>Complexity limit:<ul>
+<li><code>checkCodeFlowTooComplex(node)</code> consults <code>AnalyzerNodeInfo.getCodeFlowComplexity(scopeNode)</code> vs <code>maxCodeComplexity</code> to short-circuit overly-complex graphs.</li>
+</ul>
+</li>
+<li>Special usages:<ul>
+<li>Return type inference for unannotated functions uses code flow limits like <code>maxReturnTypeInferenceCodeFlowComplexity</code> and <code>maxReturnCallSiteTypeInferenceCodeFlowComplexity</code>.</li>
+<li><code>codeFlowAnalyzerCache</code> stores analyzers keyed by execution scope id and optional <code>typeAtStart</code> to stabilize narrowing across evaluations.</li>
+</ul>
+</li>
+</ul>
+<p>Key references in <code>typeEvaluator.ts</code>
+- <code>getFlowTypeOfReference</code> (calls <code>getCodeFlowAnalyzerForNode</code>, <code>analyzer.getTypeFromCodeFlow</code>)
+- <code>getNodeReachability</code>, <code>getAfterNodeReachability</code> (call <code>codeFlowEngine.getFlowNodeReachability</code>)
+- <code>getCodeFlowAnalyzerForNode</code>, <code>codeFlowAnalyzerCache</code> (analyzer caching)
+- <code>checkCodeFlowTooComplex</code>, <code>maxCodeComplexity</code></p>
+<h2 id="the-code-flow-engine-core-algorithms">The Code Flow Engine: core algorithms</h2>
+<ul>
+<li>File: <code>codeFlowEngine.ts</code></li>
+<li>Factory: <code>getCodeFlowEngine(evaluator, speculativeTypeTracker)</code> returns a <code>CodeFlowEngine</code> with:<ul>
+<li><code>createCodeFlowAnalyzer()</code> → <code>CodeFlowAnalyzer</code> exposing <code>getTypeFromCodeFlow(flowNode, reference|undefined, options?)</code>.</li>
+<li><code>getFlowNodeReachability(flowNode, sourceFlowNode?, ignoreNoReturn?)</code> → reachability over the CFG.</li>
+<li><code>narrowConstrainedTypeVar(flowNode, typeVar)</code> → narrows constrained TypeVars across guards/patterns.</li>
+<li><code>printControlFlowGraph</code> → debug printing with <code>formatControlFlowGraph</code>.</li>
+</ul>
+</li>
+</ul>
+<h3 id="gettypefromcodeflow-backward-traversal-with-narrowing-and-caching">getTypeFromCodeFlow: backward traversal with narrowing and caching</h3>
+<ul>
+<li>Per-reference caches</li>
+<li>A separate cache per reference key: combines <code>createKeyForReference(reference)</code> and an optional <code>targetSymbolId</code> to scope cached types.</li>
+<li>Caches entries as either a concrete <code>Type</code> or an <code>IncompleteType</code> record with <code>incompleteSubtypes</code> for loops.</li>
+<li>Walk-from-current algorithm</li>
+<li>Starting at a <code>flowNode</code>, repeatedly:<ul>
+<li>Return cached type if available (respecting “pending”/incomplete generation guards to avoid recursion and churn).</li>
+<li>Short-circuit on <code>Unreachable*</code> nodes with <code>Never</code>.</li>
+<li>Skip-through linear nodes updating state:</li>
+<li><code>FlowVariableAnnotation</code>, <code>FlowWildcardImport</code>, <code>FlowAssignment.antecedent</code>, <code>FlowCall.antecedent</code>, etc.</li>
+<li><code>FlowCall</code>: if <code>isCallNoReturn</code> true, stop exploration on this path (treat as unreachable upstream).</li>
+<li><code>FlowAssignment</code> matching the reference: evaluate RHS type via <code>evaluator.evaluateTypesForStatement</code>, handle <code>Unbind</code> (yield <code>UnboundType</code> except for index/member deletes), handle partial-match kill of prior narrowings; special-case <code>TypedDict</code> key assignment narrowing when target is <code>x['literal_key']</code>.</li>
+<li>Conditional nodes <code>FlowCondition</code> with <code>True/False</code>/<code>TrueNever/FalseNever</code>:<ul>
+<li>If reference matches, compute <code>typeNarrowingCallback</code> to refine the antecedent type; if <code>Never</code> under implied-else gate, block further exploration.</li>
+</ul>
+</li>
+<li>Pattern nodes:<ul>
+<li><code>FlowNarrowForPattern</code>: evaluate case/match for subject narrowing; can also narrow subexpressions in <code>subject</code>.</li>
+<li><code>FlowExhaustedMatch</code>: if subject narrowed to <code>Never</code> at bottom, gate further exploration; otherwise project narrowed type to subexpressions.</li>
+</ul>
+</li>
+<li>Finally-gates:<ul>
+<li><code>FlowPreFinallyGate</code>/<code>FlowPostFinally</code>: toggles a closed-gate set and uses speculative mode inside <code>finally</code> to evaluate “gate-open” types safely.</li>
+</ul>
+</li>
+<li>Context managers:<ul>
+<li><code>FlowPostContextManagerLabel</code>: consults <code>isExceptionContextManager</code> to decide if this path should be blocked based on <code>blockIfSwallowsExceptions</code>.</li>
+</ul>
+</li>
+<li>Start node: return <code>options.typeAtStart</code> if provided.</li>
+<li>Join nodes:</li>
+<li><code>FlowBranchLabel</code>: union of types from all antecedents.</li>
+<li><code>FlowLabel</code> with <code>LoopLabel</code>: fixed-point over antecedents; track per-antecedent incomplete subtype entries; apply a convergence limit; remove “incomplete unknowns” to encourage convergence.</li>
+</ul>
+</li>
+</ul>
+<p>Pseudocode sketch (Python-like, simplified):</p>
+<pre><code class="language-python"># Inputs: flowNode, reference (may be None), options
+# Output: TypeResult(type, isIncomplete)
+
+def getTypeFromCodeFlow(flowNode, reference, options):
+    cache = get_cache_for(reference_key(reference, options.target_symbol_id))
+
+    def get_from_node(node):
+        while True:
+            entry = cache.lookup(node)
+            if entry.is_complete():
+                return entry
+            if entry.is_incomplete_for_current_gen():
+                return entry.clean_union()
+            if cache.is_pending(node):
+                return Unknown(incomplete=True)
+
+            if node.has_flag('UnreachableStructural') or node.has_flag('UnreachableStaticCondition'):
+                return cache.store(node, Never)
+
+            if node.is_any('VariableAnnotation', 'WildcardImport'):
+                node = node.antecedent; continue
+
+            if node.is_call():
+                if is_call_noreturn(node):
+                    return cache.store(node, None)  # stop path
+                node = node.antecedent; continue
+
+            if node.is_assignment():
+                if matches_reference(node.target, reference, options.target_symbol_id):
+                    if node.is_unbind and not is_index_or_member_delete(reference):
+                        return cache.store(node, Unbound)
+                    rhs = eval_rhs_type(node)
+                    return cache.store(node, rhs.type, incomplete=rhs.isIncomplete)
+                if partial_match(node.target, reference):
+                    return options.typeAtStart
+                node = node.antecedent; continue
+
+            if node.is_branch_label():
+                if reference and unaffected_by_branch(node, reference):
+                    node = node.pre_branch_antecedent; continue
+                return join([get_from_node(a) for a in node.antecedents])
+
+            if node.is_loop_label():
+                return solve_loop(node)
+
+            if node.is_condition():
+                if reference and not options.skipConditionalNarrowing:
+                    narrowed = apply_narrowing(reference, node.expression, positive=node.is_true())
+                    if narrowed is not None:
+                        return cache.store(node, narrowed.type, incomplete=narrowed.isIncomplete)
+                node = node.antecedent; continue
+
+            if node.is_narrow_for_pattern():
+                res = eval_case_or_match(node.statement)
+                if not reference:
+                    if is_never(res.type):
+                        return cache.store(node, None, incomplete=res.isIncomplete)
+                else:
+                    narrowed = project_subject_narrowing(reference, node.subject, res.type)
+                    return cache.store(node, narrowed, incomplete=res.isIncomplete)
+                node = node.antecedent; continue
+
+            if node.is_exhausted_match():
+                subj = eval_match(node).type
+                if is_never(subj):
+                    return cache.store(node, Never)
+                if reference:
+                    narrowed = project_subject_narrowing(reference, node.subject_expression, subj)
+                    return cache.store(node, narrowed)
+                node = node.antecedent; continue
+
+            if node.is_pre_finally_gate():
+                return evaluate_gate_closed(node)
+
+            if node.is_post_finally():
+                return evaluate_gate_open(node)
+
+            if node.is_post_context_manager_label():
+                if should_block_path(node):
+                    return cache.store(node, None)
+
+            if node.is_start():
+                return cache.store(node, options.typeAtStart.type, incomplete=options.typeAtStart.isIncomplete)
+
+            raise AssertionError('Unexpected FlowNode kind')
+
+    return get_from_node(flowNode)
+</code></pre>
+<h3 id="getflownodereachability-structural-type-based-reachability">getFlowNodeReachability: structural + type-based reachability</h3>
+<ul>
+<li>Walks backward like <code>getTypeFromCodeFlow</code> but returns a <code>Reachability</code> enum and memoizes per <code>(flowNode, sourceFlowNode?)</code>.</li>
+<li>Short-circuits with:</li>
+<li>Structural unreachable flags, unconditional Start checks, and caching.</li>
+<li>NoReturn calls (<code>FlowCall</code>) unless <code>ignoreNoReturn=True</code>.</li>
+<li><code>FlowPostContextManagerLabel</code> when no context manager swallows exceptions.</li>
+<li>Conditional narrowing where the type becomes <code>Never</code>.</li>
+<li>Pattern narrowing resulting in <code>Never</code>.</li>
+<li>Joins at labels consider whether any antecedent is reachable; otherwise preserves reason (by-analysis vs static-condition vs structural).</li>
+</ul>
+<p>Pseudocode sketch:</p>
+<pre><code class="language-python">def getFlowNodeReachability(flowNode, sourceFlowNode=None, ignoreNoReturn=False):
+    visited = set(); closed_finally = set(); cache = {}
+
+    def reach(node):
+        if (node, sourceFlowNode) in cache: return cache[(node, sourceFlowNode)]
+        if node in visited: return 'UnreachableStructural'
+        visited.add(node)
+
+        if node.has_flag('UnreachableStructural'): return store(node, 'UnreachableStructural')
+        if node.has_flag('UnreachableStaticCondition'): return store(node, 'UnreachableStaticCondition')
+        if node is sourceFlowNode: return store(node, 'Reachable')
+
+        if node.is_any('VariableAnnotation','Assignment','WildcardImport','ExhaustedMatch'):
+            return tail(node.antecedent)
+
+        if node.is_narrow_for_pattern():
+            t = eval_case_or_match(node.statement)
+            if is_never(t.type): return store(node, 'UnreachableByAnalysis')
+            return tail(node.antecedent)
+
+        if node.is_condition():
+            if narrows_to_never(node):
+                return store(node, 'UnreachableByAnalysis')
+            return tail(node.antecedent)
+
+        if node.is_call() and not ignoreNoReturn and is_call_noreturn(node):
+            return store(node, 'UnreachableByAnalysis')
+
+        if node.is_label():
+            statuses = [reach(a) for a in node.antecedents]
+            if any(s == 'Reachable' for s in statuses): return store(node, 'Reachable')
+            if any(s == 'UnreachableByAnalysis' for s in statuses): return store(node, 'UnreachableByAnalysis')
+            if any(s == 'UnreachableStaticCondition' for s in statuses): return store(node, 'UnreachableStaticCondition')
+            return store(node, 'UnreachableStructural')
+
+        if node.is_start():
+            return store(node, 'Reachable' if sourceFlowNode is None else 'UnreachableByAnalysis')
+
+        if node.is_pre_finally_gate():
+            if node.id in closed_finally: return store(node, 'UnreachableByAnalysis')
+            return tail(node.antecedent)
+
+        if node.is_post_finally():
+            was_closed = node.pre_finally_id in closed_finally
+            closed_finally.add(node.pre_finally_id)
+            try:
+                return store(node, reach(node.antecedent))
+            finally:
+                if not was_closed: closed_finally.remove(node.pre_finally_id)
+
+        raise AssertionError
+
+    def store(node, status):
+        cache[(node, sourceFlowNode)] = status
+        return status
+
+    def tail(next_node):
+        return reach(next_node)
+
+    return reach(flowNode)
+</code></pre>
+<h3 id="other-algorithms-in-the-engine">Other algorithms in the engine</h3>
+<ul>
+<li><code>narrowConstrainedTypeVar(flowNode, typeVar)</code>:</li>
+<li>Traverses back through guards and pattern matches to reduce a constrained TypeVar to a single remaining constraint when possible (e.g., <code>isinstance(x, C)</code> filters constraints to those compatible with <code>C</code>). Handles labels/loops, Pre/PostFinally, and ignores nodes that don’t affect the TypeVar.</li>
+<li><code>isCallNoReturn</code> and <code>isFunctionNoReturn</code>:</li>
+<li>Determines if a call/site is effectively NoReturn (declared <code>NoReturn</code>; overloads <code>NoReturn</code>; coroutine third type arg <code>Never</code>; or flow proves function never reaches after-node). Caches per call node id.</li>
+<li><code>isExceptionContextManager</code>:</li>
+<li>Detects context managers whose <code>__exit__</code>/<code>__aexit__</code> return a truthy <code>bool</code>, indicating exception swallowing.</li>
+</ul>
+<h2 id="keys-that-connect-binder-and-evaluator">Keys that connect binder and evaluator</h2>
+<ul>
+<li><code>AnalyzerNodeInfo.setFlowNode</code> / <code>getFlowNode</code>, <code>setAfterFlowNode</code> / <code>getAfterFlowNode</code> attach the current and end-of-block flow nodes to parse nodes.</li>
+<li><code>AnalyzerNodeInfo.setCodeFlowExpressions</code> stores a per-scope set of reference keys that actually participate in code flow. <code>typeEvaluator</code> uses this set to skip unnecessary flow analysis.</li>
+<li><code>AnalyzerNodeInfo.setCodeFlowComplexity</code> and <code>maxCodeComplexity</code> act as a guardrail against pathological graphs.</li>
+</ul>
+<h2 id="debugging-printing-the-cfg">Debugging: printing the CFG</h2>
+<ul>
+<li>File: <code>codeFlowUtils.ts</code>, exported <code>formatControlFlowGraph(flowNode: FlowNode)</code> produces an ASCII rendering of the graph rooted at a node, with labels for node kinds.</li>
+<li>Engine hook: <code>codeFlowEngine.printControlFlowGraph</code> calls this utility (behind an internal flag).</li>
+</ul>
+<h2 id="end-to-end-flow">End-to-end flow</h2>
+<p>1) Parse → <code>binder.ts</code> constructs the CFG, attaching flow nodes to parse nodes and tracking affected reference keys and complexity.
+2) Type evaluation → <code>typeEvaluator.ts</code> checks complexity and whether the reference participates in code flow, then calls <code>CodeFlowAnalyzer.getTypeFromCodeFlow</code> with the node attached to that parse node.
+3) <code>codeFlowEngine.ts</code> traverses backward, applying assignments/guards, narrowing, handling branches/loops/finally/context managers, pattern matching, and NoReturn detection.
+4) Results are memoized to avoid recomputation and prevent recursion.</p>
+<h2 id="exact-references-file-and-symbol">Exact references (file and symbol)</h2>
+<ul>
+<li>CFG node definitions: <code>analyzer/codeFlowTypes.ts</code></li>
+<li><code>FlowFlags</code>, <code>FlowNode</code>, <code>FlowLabel</code>, <code>FlowBranchLabel</code>, <code>FlowAssignment</code>, <code>FlowVariableAnnotation</code>, <code>FlowWildcardImport</code>, <code>FlowCondition</code>, <code>FlowNarrowForPattern</code>, <code>FlowExhaustedMatch</code>, <code>FlowCall</code>, <code>FlowPreFinallyGate</code>, <code>FlowPostFinally</code>, <code>FlowPostContextManagerLabel</code></li>
+<li><code>isCodeFlowSupportedForReference</code>, <code>createKeyForReference</code>, <code>createKeysForReferenceSubexpressions</code></li>
+<li>CFG construction (binder): <code>analyzer/binder.ts</code></li>
+<li>Start: <code>_createStartFlowNode</code></li>
+<li>Labels: <code>_createBranchLabel</code>, <code>_createLoopLabel</code>, <code>_finishFlowLabel</code>, <code>_addAntecedent</code>, <code>_bindLoopStatement</code></li>
+<li>Conditions: <code>_bindConditional</code>, <code>_createFlowConditional</code>, <code>_bindNeverCondition</code></li>
+<li>Visitors building graph: <code>visitIf</code>, <code>visitWhile</code>, <code>visitFor</code>, <code>visitComprehension</code>, <code>visitTernary</code>, <code>visitBinaryOperation</code>, <code>visitUnaryOperation</code>, <code>visitTry</code>, <code>visitWith</code>, <code>visitMatch</code>, <code>visitExcept</code>, <code>visitRaise</code>, <code>visitReturn</code></li>
+<li>Assignment/annotation/call/import: <code>_createFlowAssignment</code>, <code>_createVariableAnnotationFlowNode</code>, <code>_createCallFlowNode</code>, <code>_createFlowWildcardImport</code>, <code>_createFlowNarrowForPattern</code>, <code>_createFlowExhaustedMatch</code></li>
+<li>Complexity: <code>_codeFlowComplexity</code> and <code>AnalyzerNodeInfo.setCodeFlowComplexity</code></li>
+<li>Engine and algorithms: <code>analyzer/codeFlowEngine.ts</code></li>
+<li>Factory: <code>getCodeFlowEngine</code>, analyzer: <code>createCodeFlowAnalyzer</code></li>
+<li>Narrowing: <code>getTypeFromCodeFlow</code> and helpers for branch/loop/finally nodes</li>
+<li>Reachability: <code>getFlowNodeReachability</code></li>
+<li>TypeVar narrowing: <code>narrowConstrainedTypeVar</code></li>
+<li>NoReturn detection: <code>isCallNoReturn</code>, <code>isFunctionNoReturn</code></li>
+<li>Context manager detection: <code>isExceptionContextManager</code></li>
+<li>Debug: <code>printControlFlowGraph</code></li>
+<li>Type evaluator integration: <code>analyzer/typeEvaluator.ts</code></li>
+<li>Engine creation and caching: <code>getCodeFlowEngine(...)</code>, <code>getCodeFlowAnalyzerForNode</code>, <code>codeFlowAnalyzerCache</code></li>
+<li>Main use sites: <code>getFlowTypeOfReference</code>, <code>getNodeReachability</code>, <code>getAfterNodeReachability</code></li>
+<li>Complexity guard: <code>checkCodeFlowTooComplex</code>, constants <code>maxCodeComplexity</code>, <code>maxReturnTypeInferenceCodeFlowComplexity</code>, <code>maxReturnCallSiteTypeInferenceCodeFlowComplexity</code></li>
+<li>CFG print utility: <code>analyzer/codeFlowUtils.ts</code> → <code>formatControlFlowGraph</code></li>
+<li>Node info attachment: <code>analyzer/analyzerNodeInfo.ts</code> → <code>setFlowNode</code>, <code>getFlowNode</code>, <code>setAfterFlowNode</code>, <code>setCodeFlowExpressions</code>, <code>setCodeFlowComplexity</code></li>
+</ul>
+<h2 id="notes-on-performance-and-limits">Notes on performance and limits</h2>
+<ul>
+<li>Complexity limits in <code>typeEvaluator.ts</code> avoid high-cost analyses: if exceeded, flow analysis is skipped and results are marked incomplete.</li>
+<li>Loop convergence uses per-antecedent incomplete entries and a convergence attempt limit; “incomplete unknown” subtypes may be removed to help convergence.</li>
+<li>Per-reference caches prevent repeated traversals; <code>pending</code> guards avoid re-entrant recursion.</li>
+</ul>
+<h2 id="appendix-related-conceptual-docs">Appendix: related conceptual docs</h2>
+<ul>
+<li>Repo doc: <code>docs/type-concepts-advanced.md</code> → Sections "Type Narrowing", "Narrowing for Implied Else", and "Reachability".</li>
+<li>Online docs: https://microsoft.github.io/pyright/#/docs/type-concepts-advanced and https://microsoft.github.io/pyright/#/docs/internals</li>
+</ul></div>
+            </div>
+        </div>
+
+        <footer class="col-md-12">
+            <hr>
+            <p>Documentation built with <a href="https://www.mkdocs.org/">MkDocs</a>.</p>
+        </footer>
+        <script src="../../js/bootstrap.bundle.min.js"></script>
+        <script>
+            var base_url = "../..",
+                shortcuts = {"help": 191, "next": 78, "previous": 80, "search": 83};
+        </script>
+        <script src="../../js/base.js"></script>
+        <script src="../../search/main.js"></script>
+
+        <div class="modal" id="mkdocs_search_modal" tabindex="-1" role="dialog" aria-labelledby="searchModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="searchModalLabel">Search</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>From here you can search these documents. Enter your search terms below.</p>
+                <form>
+                    <div class="form-group">
+                        <input type="search" class="form-control" placeholder="Search..." id="mkdocs-search-query" title="Type search term here">
+                    </div>
+                </form>
+                <div id="mkdocs-search-results" data-no-results-text="No results found"></div>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div><div class="modal" id="mkdocs_keyboard_modal" tabindex="-1" role="dialog" aria-labelledby="keyboardModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="keyboardModalLabel">Keyboard Shortcuts</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th style="width: 20%;">Keys</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="help shortcut"><kbd>?</kbd></td>
+                    <td>Open this help</td>
+                  </tr>
+                  <tr>
+                    <td class="next shortcut"><kbd>n</kbd></td>
+                    <td>Next page</td>
+                  </tr>
+                  <tr>
+                    <td class="prev shortcut"><kbd>p</kbd></td>
+                    <td>Previous page</td>
+                  </tr>
+                  <tr>
+                    <td class="search shortcut"><kbd>s</kbd></td>
+                    <td>Search</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div>
+
+    </body>
+</html>

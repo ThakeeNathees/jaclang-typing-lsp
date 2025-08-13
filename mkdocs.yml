@@ -2,7 +2,10 @@ site_name: My Docs
 
 nav:
   - Home: index.md
-  - Architecture Reference: archit_ref.md
+  - Architecture Reference:
+      - archit_ref.md
+      - docs-reverse-engineering/control-flow-graph-and-type-checking.md
+      - docs-reverse-engineering/type-narrowing-deep-dive.md
 
 theme:
   name: mkdocs

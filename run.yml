@@ -1,0 +1,43 @@
+# py-shell-runner is an npm like run configuration and shell scripting package.
+# you can define your commands in a run.yml file and simply run with the run
+# command, like `run build`, `run clean`, etc.
+#
+#       ______   __    __  _______
+#      /      \ /  |  /  |/       \
+#     /$$$$$$  |$$ |  $$ |$$$$$$$  |
+#     $$ |  $$/ $$ |  $$ |$$ |  $$ |
+#     $$ |      $$ \__$$ |$$ |  $$ |
+#     $$ |      $$    $$/ $$ |  $$ |
+#     $$/        $$$$$$/  $$/   $$/
+#
+#
+# Getting started:
+#
+#   # Install with any of the bellow command.
+#   .---------------------------------------.
+#   | uv add py-shell-runner                |
+#   | pip install py-shell-runner           |
+#   '---------------------------------------'
+#
+#   # Create a `run.yml` file in your project root
+#     run --init
+#
+#   # Run the commands defined in `run.yml`
+#     run build
+#
+
+commands:
+
+  build:
+    - rm -r archit_ref/
+    - rm -r css/
+    - rm -r docs-reverse-engineering
+    - rm -r img/
+    - rm -r js/
+    - rm -r search/
+    - rm -r webfonts/
+    - rm 404.html index.html sitemap.xml sitemap.xml.gz
+
+    - mkdocs build
+    - mv site/* .
+    - rm -r site/

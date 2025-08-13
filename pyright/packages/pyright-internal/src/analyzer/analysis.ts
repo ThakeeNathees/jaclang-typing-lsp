@@ -50,6 +50,7 @@ export function analyzeProgram(
     let moreToAnalyze = false;
 
     callback = callback ?? nullCallback;
+    console.log(`Analyzing program with maxTime: ${maxTime ? maxTime.toString() : 'undefined'}`);
 
     try {
         throwIfCancellationRequested(token);

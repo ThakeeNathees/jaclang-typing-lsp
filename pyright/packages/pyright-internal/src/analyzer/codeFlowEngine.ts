@@ -171,7 +171,7 @@ interface CodeFlowTypeCache {
 }
 
 // This debugging option prints the control flow graph when getTypeFromCodeFlow is called.
-const enablePrintControlFlowGraph = false;
+const enablePrintControlFlowGraph = true;
 
 // This debugging option prints the results of calls to isCallNoReturn.
 const enablePrintCallNoReturn = false;

@@ -23,6 +23,7 @@
 - Usage
 
   - [Advanced Type Concepts](type-concepts-advanced.md)
+  - [Type Narrowing Deep Dive](type-narrowing-deep-dive.md)
   - [Type Inference](type-inference.md)
   - [Import Statements](import-statements.md)
   - [Import Resolution](import-resolution.md)
@@ -36,5 +37,6 @@
 
   - [Building & Debugging](build-debug.md)
   - [Pyright Internals](internals.md)
+  - [Control-Flow Graph and Type Checking](control-flow-graph-and-type-checking.md)
 
 

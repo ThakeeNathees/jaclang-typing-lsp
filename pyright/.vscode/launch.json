@@ -112,7 +112,14 @@
             "name": "Pyright jest selected test",
             "type": "node",
             "request": "launch",
-            "args": ["${fileBasenameNoExtension}", "--runInBand", "-t", "${selectedText}", "--forceExit", "--testTimeout=180000"],
+            "args": [
+                "${fileBasenameNoExtension}",
+                "--runInBand",
+                "-t",
+                "${selectedText}",
+                "--forceExit",
+                "--testTimeout=180000"
+            ],
             "cwd": "${workspaceRoot}/packages/pyright-internal",
             "console": "integratedTerminal",
             "internalConsoleOptions": "neverOpen",
@@ -131,6 +138,22 @@
             "console": "integratedTerminal",
             "internalConsoleOptions": "neverOpen",
             "program": "${workspaceFolder}/packages/pyright-internal/node_modules/jest/bin/jest"
+        },
+        {
+            "name": "Pyright Understanding Current File",
+            "type": "node",
+            "request": "launch",
+            "program": "${workspaceRoot}/packages/pyright/index.js",
+            "args": [
+                "--verbose",
+                "${file}"
+            ],
+            "internalConsoleOptions": "openOnSessionStart",
+            "outFiles": [
+                "${workspaceRoot}/packages/pyright/dist/**/*.js"
+            ],
+            "sourceMaps": true,
+            "smartStep": true
         }
     ]
 }
